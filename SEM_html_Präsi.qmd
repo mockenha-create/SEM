@@ -1,0 +1,598 @@
+---
+title: "Thema 03: CFA mit kategoralen Indikatoren (ML vs.WLSMV)"
+author: "Clara and Anna"
+format:
+  revealjs:
+    theme: simple
+    css: TUchemnitz.css
+    include-in-header:
+      text: |
+        <link rel="preconnect" href="[fonts.googleapis.com](https://fonts.googleapis.com)">
+        <link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;500&display=swap)" rel="stylesheet">
+editor: visual
+---
+
+```{r}
+#| label: setup
+#| echo: false
+#| message: false
+#| warning: false
+# Pakete laden
+library(lavaan)
+library(tinytex)
+library(lavaan)
+library(palmerpenguins)
+library(rmarkdown)
+library(tidyverse)
+library(gt)
+library(psych)
+library(purrr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Datensatz laden
+data(bfi)
+
+# Datensatz zum Arbeiten erstellen
+bfi_items <- bfi[1:25]
+
+# Variablen umcodieren
+bfi_items$A1_rev <- 7 - bfi$A1
+bfi_items$C4_rev <- 7 - bfi$C4
+bfi_items$C5_rev <- 7 - bfi$C5
+bfi_items$E1_rev <- 7 - bfi$E1
+bfi_items$E2_rev <- 7 - bfi$E2
+bfi_items$O2_rev <- 7 - bfi$O2
+bfi_items$O5_rev <- 7 - bfi$O5
+
+
+bfi_model <- '
+
+Agreeableness =~ A1_rev + A2 + A3 + A4 + A5
+Conscientiousness =~ C1 + C2 + C3 + C4_rev + C5_rev
+Extraversion =~ E1_rev + E2_rev + E3 + E4 + E5
+Neuroticism =~ N1 + N2 + N3 + N4 + N5
+Openness =~ O1 + O2_rev + O3 + O4 + O5_rev
+
+'
+
+# CFA mit ML berechnen
+  fit_ML <- cfa(
+    model = bfi_model,
+    data = bfi_items,
+    estimator = "ML",
+    missing = "fiml" # Full information Maximum Likelihood = alle Verfügbaren Infos werden genutzt, auch wenn Werte fehlen
+  )
+
+  # summary (
+  #   fit_ML,
+  #   fit.measures = TRUE,
+  #   standardized = TRUE
+  # )
+  # 
+  fit_ML_vals <- fitMeasures(fit_ML, c("chisq","cfi","tli","rmsea","srmr"))
+
+
+# CFA mit  WLSMV für ordinalskalierte Variablen berechnen 
+fit_WLSMV <- cfa(
+  model = bfi_model,
+  data = bfi_items,
+  estimator = "WLSMV",
+  ordered = colnames(bfi_items)
+)
+
+# summary (
+#   fit_WLSMV,
+#   fit.measures = TRUE,
+#   standardized = TRUE
+#   )
+
+fit_WLSMV_vals <- fitMeasures(fit_WLSMV, c("chisq.scaled","cfi.scaled","tli.scaled","rmsea.scaled","srmr"))
+
+# Tabelle zusammenbauen
+fit_table <- tibble( Index = c("χ²", "CFI", "TLI", "RMSEA", "SRMR"),
+  ML    = round(fit_ML_vals,    3), 
+  WLSMV = round(fit_WLSMV_vals, 3))
+  
+
+```
+
+## Fragestellung:
+
+In der Psychologie werden Likert-Skalen (z.B. 1-5 oder 1-6) routinemäßig als **kontinuierlich** behandelt.
+
+Aber sind sie das wirklich?
+
+Macht es einen Unterschied, ob Items als kontinuierlich (ML-Schätzung) oder als ordinal (WLSMV-Schätzung) behandelt werden?
+
+## [Der Datensatz mit dem wir arbeiten:]{.underline}
+
+**psych::bfi** (R-Paket `psych`, N ≈ 2800, 25 Items, 6-stufige Likert-Skala)
+
+Die Big Five sind dort über die Itemnamen codiert, mit 5 Items:
+
+**A** = Agreeableness
+
+**C** = Conscientiousness
+
+**E** = Extraversion
+
+**N** = Neuroticism
+
+**O** = Openness
+
+## [Zwei unterschiedliche Schätzungen]{.underline}
+
+::: notes
+Die zentrale Frage: Was *sind* diese Zahlen 1--5 eigentlich?
+
+Hier gibt es zwei Sichtweisen:
+:::
+
+**Sichtweise A: „Die Zahlen sind metrisch"**
+
+::: notes
+Der Abstand von 1 zu 2 ist genauso groß wie von 4 zu 5.
+
+Das ist die Annahme von ML. ML behandelt die Daten wie echte Messwerte (z.B. Körpergröße in cm), berechnet Pearson-Korrelationen und schätzt darauf basierend das Modell.
+:::
+
+**→ Maximum Likelihood:**
+
+-   behandelt die Daten wie *echte Messwerte* (z.B. Körpergröße in cm)
+-   berechnet Pearson-Korrelationen und schätzt darauf basierend das Modell
+
+**Sichtweise B: „Die Zahlen sind nur Rangfolgen"**
+
+::: notes
+Wir wissen nur: 6 \> 5 \> 4 \> 3 \> 2 \> 1. Aber nicht, wie groß die Abstände sind. Das ist die Annahme von WLSMV. WLSMV sagt: „Hinter jeder Antwort steckt eigentlich eine *kontinuierliche, normalverteilte* **latente Variable**. Wir sehen nur, in welche Kategorie sie fällt."
+:::
+
+**→ WLSMV = Weighted Least Squares Mean and Variance adjusted**
+
+> „Hinter jeder Antwort steckt eigentlich eine *kontinuierliche, normalverteilte* **latente Variable**. Wir sehen nur, in welche Kategorie sie fällt."
+
+-   berechnet **polychorische Korrelationen**: Das sind geschätzte Korrelationen zwischen den *latenten kontinuierlichen Variablen*, die hinter den Kategorien liegen.
+
+-   speziell für **ordinale Daten** entwickelt (z. B. Likert-Skalen wie beim BFI mit 1-6 Antwortskalen)
+
+::: notes
+Teil 3: Ein Bild, das es klar macht
+
+Stellt euch vor, ihr messt „Gewissenhaftigkeit" einer Person. In Wirklichkeit hat diese Person einen *exakten* Wert auf einem Kontinuum: sagen wir 4.37.
+
+Aber der Fragebogen kann nur ganze Kategorien erfassen. Die Person muss sich zwischen 4 und 5 entscheiden → sie kreuzt 4 an.
+
+ML sagt: „Der Wert ist 4."
+
+WLSMV sagt: „Der wahre Wert liegt irgendwo im Bereich, der zu Kategorie 4 führt: ich schätze die Korrelationen entsprechend."
+:::
+
+## [Warum macht es einen Unterschied?]{.underline}
+
+Wenn wir Korrelationen zwischen Items berechnen, dann...
+
+-   **unterschätzt** die **Pearson-Korrelation (ML)** den **wahren Zusammenhang**, besonders wenn Items schief verteilt sind oder wenige Kategorien haben
+
+-   die **Polychorische Korrelation (WLSMV)** **korrigiert** dafür und schätzt den „wahren" Zusammenhang hinter den Kategorien
+
+::: notes
+Konsequenz für Faktorladungen:
+
+WLSMV-Ladungen sind oft höher als ML-Ladungen: nicht weil WLSMV „übertreibt", sondern weil ML die Zusammenhänge systematisch unterschätzt, wenn die Daten nicht wirklich metrisch sind.
+:::
+
+**Wann sollten wir welches Verfahren nutzen?**
+
+| Skala           | ML             | WLSMV       |
+|-----------------|----------------|-------------|
+| 1--2 Kategorien | schlecht       | gut         |
+| 3--5 Kategorien | ok             | besser      |
+| 6--7 Kategorien | oft akzeptabel | sehr gut    |
+| kontinuierlich  | ideal          | nicht nötig |
+
+::: notes
+BFI liegt mit 6 Kategorien im Grenzbereich
+:::
+
+## [Systematischer Vergleich]{.underline}
+
+```{r}
+# Tabelle:
+fit_table %>%
+  gt() %>%
+  tab_header(
+    title = md("*Fit-Indizes der 5-Faktor-CFA: ML vs. WLSMV*")
+  ) %>%
+  cols_label(
+    Index = "Fit-Index",
+    ML    = "ML",
+    WLSMV = "WLSMV"
+  ) %>%
+  tab_style(
+    style     = cell_borders(sides = c("top", "bottom"), weight = px(2)),
+    locations = cells_column_labels()
+  ) %>%
+  tab_style(
+    style     = cell_borders(sides = "bottom", weight = px(2)),
+    locations = cells_body(rows = nrow(fit_table))
+  ) %>%
+  tab_options(
+    table.border.top.width      = px(2),
+    table.border.bottom.width   = px(2),
+    column_labels.border.bottom.width = px(1),
+    table_body.border.bottom.width    = px(0),
+    table_body.hlines.width     = px(0),   # keine horizontalen Linien im Body
+    heading.border.bottom.width = px(0)
+  ) %>%
+  tab_footnote(
+    footnote  = md("*Note.* CFI und RMSEA bei WLSMV basieren auf einem anderen Baseline-Modell als bei ML — ein direkter Vergleich ist nur eingeschränkt interpretierbar."),
+    locations = cells_column_labels(columns = WLSMV)
+  )
+
+
+```
+
+::: {style="max-height: 350px; overflow-y: auto;  padding: 10px;"}
+**χ²:** Prüft ob die *modellimplizierte Kovarianzmatrix* exakt *der empirischen entspricht.*
+
+-   [Signifikant]{.underline}: Modell *weicht signifikan*t von den Daten *ab*
+
+-   [Problem]{.underline}: Bei großen Stichproben fast immer signifikant
+
+::: notes
+Beide χ²-Werte sind signifikant (p \< .001), was bei N ≈ 2800 zu erwarten ist. Der χ² ist bei dieser Stichprobengröße kein verlässliches Kriterium für Modell-Fit und wird daher nicht zur Beurteilung herangezogen."
+:::
+
+\
+\
+\
+\
+\
+
+\
+
+::: notes
+Comparative fit index
+
+was genau ist das Baseline-Modell nochmal: ist das Unabhängigkeitsmodell, in dem alle Items unkorreliert sind
+:::
+
+\
+\
+
+**CFI**: *Vergleicht* das Modell *mit dem Baseline-Modell* → wie viel besser mein Modell im Vergleich zum Worst-Case ist
+
+-   Wertebereich: 0-1
+
+-   ≥ .95 = guter Fit
+
+-   ≥ .90 = akzeptabel
+
+-   \< .90 = problematisch
+
+|                                          |                                    |
+|:-----------------------------------------|:-----------------------------------|
+| ML                                       | WLSMV                              |
+| unter .90 [schlecht]{style="color: red"} | .824[schlecht]{style="color: red"} |
+
+::: notes
+(Tucker-Lewis-Index), ähnlich wie CFI, aber mit bestraft überparametrisierte Modelle.
+:::
+
+**\
+\
+\
+\
+TLI**: ähnlich wie CFI, aber "*bestraft*" *Modellkomplexität*
+
+-   Kann theoretisch \>1 oder \<0 werden
+-   ≥ .95 = guter Fit
+-   ≥ .90 = akzeptabel
+
+| ML                                  | WLSMV                               |
+|:------------------------------------|:------------------------------------|
+| .747 [schlecht]{style="color: red"} | .801 [schlecht]{style="color: red"} |
+
+\
+\
+
+**RMSEA**: Misst, wie gut das Modell *pro Freiheitsgrad in der Population passen würde*. Berücksichtigt Modellkomplexität
+
+::: notes
+df = wie viele Informationen nutzt dein Modell, wie viele Parameter schätzt es? Ein komplexes Modell mit vielen Parametern passt fast immer besser : aber das ist „unfair".
+
+RMSEA korrigiert dafür. Es fragt nicht nur „wie gut passt das Modell?", sondern „wie gut passt es, *gemessen an seiner Komplexität*?
+
+> Ein Modell mit 10 Parametern das gut passt ist beeindruckender als eines mit 100 Parametern das genauso gut passt.
+>
+> Konkret: RMSEA ≤ .05 heißt, die durchschnittliche Abweichung pro Freiheitsgrad ist sehr klein --- das Modell ist sparsam *und* passend
+:::
+
+-   ≤ .05 = guter Fit
+
+-   .05--.08 = akzeptabel
+
+-   .08--.10 = mäßig
+
+-   .10 = schlechter Fit
+
+| ML                                    | WLSMV                            |
+|:--------------------------------------|:---------------------------------|
+| .077 [akzeptabel]{style="color: red"} | .095 [mäßig]{style="color: red"} |
+
+\
+
+**SRMR:** Standardisiertes Mittel der Residuen zwischen beobachteten und modellimplizierten Korrelationen. Direkt interpretierbar als durchschnittliche Abweichung
+
+-   ≤ .08 = guter Fit
+
+-   ≤ .05 = sehr guter Fit
+
+| ML                                    | WLSMV                                     |
+|---------------------------------------|-------------------------------------------|
+| .072 [akzeptabel]{style="color: red"} | .083 [kein guter Fit]{style="color: red"} |
+:::
+
+## [Was das inhaltlich bedeutet:]{.underline}
+
+Beide Schätzer zeigen schlechten Fit. Das Modell passt einfach nicht gut zu den Daten.
+
+→ trotzdem ist **WLSMV *methodisch* angemessener** (weil die Daten ordinal sind)
+
+Warum ist der Fit so schlecht?
+
+::: incremental
+-   Die Big Five sind **nicht so trennscharf** wie angenommen
+
+-   Querladungen
+
+-   Korrelierte Residuen
+
+    → Das Modell scheint insgesamt zu restrikiv zu sein
+:::
+
+::: notes
+-   Die Big Five sind nicht so trennscharf wie angenommen = Faktoren korrelieren stärker als das Modell erlaubt
+
+-   Querladungen = einzelne Items laden auf mehrere Faktoren (besonders bei Openness bekannt)
+
+-   Korrelierte Residuen = Items innerhalb eines Faktors teilen Varianz über den Faktor hinaus
+
+Das BFI-Modell ist bekannt für mäßigen Fit bei strikter CFA; ist also ein bekanntes Problem
+
+restriktiv = **das Modell lässt keine Abweichungen von seiner Idealstruktur zu**. Je strenger die Annahmen, desto wahrscheinlicher, dass echte Daten nicht perfekt passen.
+
+Bsp: Item A5: ("I make people feel at ease") lädt laut Modell nur auf Agreeableness aber in Wirklichkeit hat es vermutlich auch etwas mit Extraversion zu tun
+
+Jedes Mal, wenn die Realität von diesen Annahmen abweicht, verschlechtert sich der Fit:
+
+→ das Modell "passt" nicht, weil es zu wenig Spielraum lässt
+:::
+
+## [Ladungen Vergleich]{.underline}
+
+::: {style="overflow-y: auto; max-height: 350px;"}
+```{r}
+#| echo: false
+
+# Ladungsvergleichtabelle ML vs. MLSMV
+# Standardisierte Ladungen extrahieren
+ladungen_ML <- standardizedsolution(fit_ML) %>%
+  filter(op == "=~") %>%
+  select(Faktor = lhs, Item = rhs, ML = est.std)
+
+ladungen_WLSMV <- standardizedsolution(fit_WLSMV) %>%
+  filter(op == "=~") %>%
+  select(Item = rhs, WLSMV = est.std)
+
+# Zusammenführen
+ladungen_table <- left_join(ladungen_ML, ladungen_WLSMV, by = "Item") %>%
+  mutate(
+    across(c(ML, WLSMV), ~ round(.x, 3)),
+    Differenz = round(abs(ML - WLSMV), 3)
+  )
+
+# APA-Tabelle mit gt
+ladungen_table %>%
+  gt(groupname_col = "Faktor") %>%
+  tab_header(
+    title = md("*Standardisierte Faktorladungen: ML vs. WLSMV*")
+  ) %>%
+  cols_label(
+    Item      = "Item",
+    ML        = "ML",
+    WLSMV     = "WLSMV",
+    Differenz = "|Δ|"
+  ) %>%
+  tab_spanner(
+    label   = "Standardisierte Ladung",
+    columns = c(ML, WLSMV)
+  ) %>%
+  tab_style(
+    style     = cell_text(weight = "bold"),
+    locations = cells_row_groups()
+  ) %>%
+  tab_options(
+    table.border.top.width            = px(2),
+    table.border.bottom.width         = px(2),
+    column_labels.border.bottom.width = px(1),
+    table_body.hlines.width           = px(0),
+    row_group.border.top.width        = px(1),
+    row_group.border.bottom.width     = px(0),
+    heading.border.bottom.width       = px(0)
+  ) %>%
+  tab_footnote(
+    footnote  = md("*Note.* Ladungen basieren auf dem standardisierten Lösungsvektor (std.all). WLSMV-Ladungen sind polychorische Korrelationsschätzungen und daher nicht direkt mit ML-Ladungen vergleichbar. |Δ| = absoluter Unterschied zwischen ML und WLSMV."),
+    locations = cells_column_labels(columns = WLSMV)
+  )
+```
+:::
+
+**\|Δ\|** = absoluter Unterschied zwischen ML und WLSMV
+
+Aber die Ladungen basieren auf unterschiedichen Schätzungen
+
+→ nicht direkt miteinander vergleichbar
+
+Die Differenzspalte zeigt uns:
+
+welche Items *instabil* über Schätzer hinweg sind ***nicht*** wie groß der „wahre" Unterschied ist
+
+## [Wie sind die Ergebnisse zu interpretieren?]{.underline}
+
+::: notes
+und wie ist das jetzt zu interpretieren, wenn die Ladungen auf unterschiedlichen Schätzungen basieren und deswegen nicht direkt miteinander Vergleichbar sind?
+:::
+
+Was wir nicht sagen Können:
+
+> „WLSMV schätzt die Ladung um .08 höher als ML."
+
+Was wir schon sagen können:
+
+> „Items mit großen Differenzen reagieren stärker auf die Wahl des Schätzers."
+
+Konkret bedeutet das:
+
+-   Kleine Differenz (\< .05) → Item verhält sich robust:
+
+    egal ob ML oder WLSMV, die Ladung ist ähnlich stabil
+
+-   Große Differenz (\> .10) → Das Item ist empfindlich gegenüber der Schätzerannahme. Das passiert typischerweise bei Items mit starker Schiefe oder wenig Kategorienstreuung
+
+    ::: notes
+    -   ::: notes
+        Kategorienstreuung: wie oft auf der Skala "1" oder "2,3,4,5 .. geantwortet
+
+        wird beeinfliusst durch:
+
+        -   zB extreme antwortkategoerien werden nicht genutzt
+
+        -   Kategorien nicht trtennschaft
+        :::
+    :::
+
+## Aufällige Items und was wir damit machen
+
+Die meisten Differenzen sind klein bis mittel.
+
+Fünf Items zeigen größere Differenzen:
+
+-   **A5: \|Δ\| = .107**
+
+-   C5_rev: \|Δ\| = .096
+
+-   O1: \|Δ\| = .091
+
+-   **N4: \|Δ\| = .133**
+
+-   O3: \|Δ\| = .099
+
+→ Verteilung prüfen
+
+→ je Faktor die **Polychorische** vs. **Pearson‑Korrelationen** vergleichen
+
+→ Modellvarianten testen (z. B. Item entfernen oder korrelierte Residuen modellieren)
+
+::: notes
+Ver*teilung Prüfen: Waru*m?
+
+weil starke Schiefe oder Kategorien‑Häufung erklärt, warum WLSMV und ML unterschiedlich schätzen.
+
+*Korrelation Vergleich WARUM?*
+
+zeigt, ob die zugrunde liegenden Zusammenhänge durch Ordinalität unterschätzt werden.
+
+*Modellvarianten WARUM?*
+
+Warum: prüft, ob Fit und Ladungen stabiler werden und ob Item das Modell stört.
+:::
+
+## Verteilung prüfen
+
+für **A5** = "I make people feel at ease."
+
+und **N4** = "I get nervous easily."
+
+```{r}
+problem_items <- c("N4","A5")  # passe an nach Bedarf
+
+plot_df <- bfi_items %>%
+  select(all_of(problem_items)) %>%
+  pivot_longer(cols = everything(), names_to = "Item", values_to = "Score") %>%
+  filter(!is.na(Score)) %>%
+  mutate(Score = factor(Score, levels = sort(unique(Score)))) %>%
+  group_by(Item, Score) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Item) %>%
+  mutate(Prop = Count / sum(Count)) %>%
+  ungroup()
+
+ggplot(plot_df, aes(x = Score, y = Prop, fill = Score)) +
+  geom_col(width = 0.75) +
+  facet_wrap(~ Item, ncol = 3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x = "Kategorie", y = "Anteil", title = "Kategorieverteilung: problematische Items") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+::: notes
+Was wir hier für A5 sehen können: eine starke Rechtsverschiebung
+
+→ das erklärt auch warum die WLSMV Ladung höher ist
+
+N4 zeigt eine relativ ausgeglichene Verteilung über Kategorien; keine starke Konzentration, aber leichte Tendenz zu niedrigeren Werten
+
+→ Bei N4 ist die Verteilung weniger einseitig, trotzdem ist die Differenz groß --- hier kann Ursache sein, dass N4 in Kombination mit den anderen Neurotizismusitems eine andere latente Varianzstruktur zeigt (z. B. unterschiedliche Streuung, Ausreißer), sodass polychorische Korrelation anders ausfällt.
+
+deswegen schauen wir uns jetzt mnochmal die die Pearson- vs. polychorische Korrelationsmatrix an
+:::
+
+## Polychorische vs. Pearson Korrelation
+
+HIER NOCHMAL EINE KURZE ERKLÄRUNG VON CLARA
+
+```{r}
+library(psych)
+# polychorische Korrelationsmatrix (Teilmenge)
+poly <- polychoric(bfi_items[, grep("^N", names(bfi_items))])$rho
+pear <- cor(bfi_items[, grep("^N", names(bfi_items))], use="pairwise.complete.obs")
+poly; pear
+
+```
+
+## Einfluss auf Modell-Fit prüfen
+
+```{r}
+# Beispiel: N4 raus
+bfi_model_dropN4 <- gsub(" \\+ N4", "", bfi_model)  # einfache Entfernung; kontrollieren
+fit_WLSMV_drop <- cfa(model = bfi_model_dropN4, data = bfi_items, estimator="WLSMV", ordered=names(bfi_items))
+fit_ML_drop <- cfa(model = bfi_model_dropN4, data = bfi_items, estimator="ML", missing="fiml")
+fitMeasures(fit_WLSMV_drop, c("cfi","tli","rmsea","srmr"))
+fitMeasures(fit_ML_drop, c("cfi","tli","rmsea","srmr"))
+
+```
+
+-   Modell ohne N4 (WLSMV, skaliert):
+
+    CFI = .926, TLI = .916, RMSEA = .088, SRMR = .078.
+
+## [Take-Home-Message]{.underline}
+
+1.  Likert-Skalen sind nicht automatisch metrisch. Die Annahme "gleicher Abstände" wird oft verletzt. Dennoch wird in psychologischer Praxis ML meist als default verwendet
+
+2.  Es gibt keine One-size-fits-all-Lösung. Am besten beide Schätzer verwenden und konvergenz prüfen. Wenn sie sich unterschiden, deutet das darauf hin, dass Datenmerkmale (wie z.B. Schiefe) die Schätzung beeinflussen
+
+3.  Fit-Indizes sind nicht direkt vergleichbar: Unterschiedliche Korrelationsmatrizen, unterschiedliche Baseline-Modelle
+
+4.  Je weniger Kategorien, desto stärker die Verzerrung durch ML. Bei 6+ Kategorien und symmetrischer Verteilung sind die Unterschiede oft gering. ML ist dann oft ausreichend
+
+5.  WLSMV korrigiert dafür, indem es die latente kontinuierliche Variable hinter den Kategorien schätzt.
+
+6.  MLR als „Kompromiss-Schätzer", der Normalverteilungsverletzungen korrigiert (löst aber das Ordinalproblem nicht)
+
+7.  Die Schätzerwahl beeinflusst eure Ergebnisse. Deshalb: immer berichten, welchen Schätzer ihr verwendet habt und warum
