@@ -1,14 +1,18 @@
 ---
-title: "Thema 03: CFA mit kategoralen Indikatoren (ML vs.WLSMV)"
-author: "Clara and Anna"
+title: "CFA mit kategoralen Indikatoren (ML vs. WLSMV)"
+subtitle: "Forschungsmethoden Strukturgleichungsmodelle SS 2026"
+author: "Clara Schubert und Anna Mockenhaupt"
+
 format:
   revealjs:
+    embed-resources: true
     theme: simple
     css: TUchemnitz.css
     include-in-header:
       text: |
-        <link rel="preconnect" href="[fonts.googleapis.com](https://fonts.googleapis.com)">
-        <link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;500&display=swap)" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;500&display=swap" rel="stylesheet">
+
 editor: visual
 ---
 
@@ -98,7 +102,7 @@ fit_table <- tibble( Index = c("χ²", "CFI", "TLI", "RMSEA", "SRMR"),
 
 ```
 
-## Fragestellung:
+## [Fragestellung:]{.underline}
 
 In der Psychologie werden Likert-Skalen (z.B. 1-5 oder 1-6) routinemäßig als **kontinuierlich** behandelt.
 
@@ -227,7 +231,7 @@ fit_table %>%
     heading.border.bottom.width = px(0)
   ) %>%
   tab_footnote(
-    footnote  = md("*Note.* CFI und RMSEA bei WLSMV basieren auf einem anderen Baseline-Modell als bei ML — ein direkter Vergleich ist nur eingeschränkt interpretierbar."),
+    footnote  = md("*Note.* CFI und TLI bei WLSMV basieren auf einem anderen Baseline-Modell als bei ML — ein direkter Vergleich ist nur eingeschränkt interpretierbar."),
     locations = cells_column_labels(columns = WLSMV)
   )
 
@@ -243,6 +247,10 @@ fit_table %>%
 
 ::: notes
 Beide χ²-Werte sind signifikant (p \< .001), was bei N ≈ 2800 zu erwarten ist. Der χ² ist bei dieser Stichprobengröße kein verlässliches Kriterium für Modell-Fit und wird daher nicht zur Beurteilung herangezogen."
+
+CFI und TLI → relative Fit-Indizes → benötigen ein Baseline-/Nullmodell.
+
+RMSEA, SRMR und χ 2 → absolute Fit-Indizes → bewerten dein Modell direkt, ohne Vergleich zu einem Baseline-Modell.
 :::
 
 \
@@ -250,32 +258,26 @@ Beide χ²-Werte sind signifikant (p \< .001), was bei N ≈ 2800 zu erwarten is
 \
 \
 \
-
-\
-
-::: notes
-Comparative fit index
-
-was genau ist das Baseline-Modell nochmal: ist das Unabhängigkeitsmodell, in dem alle Items unkorreliert sind
-:::
-
 \
 \
+**CFI**: *Vergleicht* das Modell *mit dem* **Baseline-Modell** *(*also dem Moddell das *keine Zusammenhänge* zwischen den Variabnlen annimmt)
 
-**CFI**: *Vergleicht* das Modell *mit dem Baseline-Modell* → wie viel besser mein Modell im Vergleich zum Worst-Case ist
+-   Werte hängen davon ab,
 
--   Wertebereich: 0-1
+```         
+-   wie gut das eigene Modell passt
 
--   ≥ .95 = guter Fit
+-   wie schlecht das Baseline-Modell passt
+```
 
--   ≥ .90 = akzeptabel
+-   Wenn sich das Baseline-Modell zwischen Schätzverfahren unterscheidet (wie es bei einigen Implementierungen für ordinale Daten der Fall sein kann), können sich CFI und TLI ändern, selbst wenn das eigentliche Faktorenmodell gleich bleibt.
 
 -   \< .90 = problematisch
 
-|                                          |                                    |
-|:-----------------------------------------|:-----------------------------------|
-| ML                                       | WLSMV                              |
-| unter .90 [schlecht]{style="color: red"} | .824[schlecht]{style="color: red"} |
+|                                           |                                     |
+|:--------------------------------------------|:-------------------------|
+| ML                                        | WLSMV                               |
+| unter .766 [schlecht]{style="color: red"} | .824 [schlecht]{style="color: red"} |
 
 ::: notes
 (Tucker-Lewis-Index), ähnlich wie CFI, aber mit bestraft überparametrisierte Modelle.
@@ -292,9 +294,11 @@ TLI**: ähnlich wie CFI, aber "*bestraft*" *Modellkomplexität*
 -   ≥ .90 = akzeptabel
 
 | ML                                  | WLSMV                               |
-|:------------------------------------|:------------------------------------|
+|:------------------------------------|:----------------------------------|
 | .747 [schlecht]{style="color: red"} | .801 [schlecht]{style="color: red"} |
 
+\
+\
 \
 \
 
@@ -323,6 +327,9 @@ RMSEA korrigiert dafür. Es fragt nicht nur „wie gut passt das Modell?", sonde
 | .077 [akzeptabel]{style="color: red"} | .095 [mäßig]{style="color: red"} |
 
 \
+\
+\
+\
 
 **SRMR:** Standardisiertes Mittel der Residuen zwischen beobachteten und modellimplizierten Korrelationen. Direkt interpretierbar als durchschnittliche Abweichung
 
@@ -331,7 +338,7 @@ RMSEA korrigiert dafür. Es fragt nicht nur „wie gut passt das Modell?", sonde
 -   ≤ .05 = sehr guter Fit
 
 | ML                                    | WLSMV                                     |
-|---------------------------------------|-------------------------------------------|
+|----------------------------------|--------------------------------------|
 | .072 [akzeptabel]{style="color: red"} | .083 [kein guter Fit]{style="color: red"} |
 :::
 
@@ -346,11 +353,11 @@ Warum ist der Fit so schlecht?
 ::: incremental
 -   Die Big Five sind **nicht so trennscharf** wie angenommen
 
--   Querladungen
+-   **Querladungen**
 
--   Korrelierte Residuen
+-   **Korrelierte Residuen**
 
-    → Das Modell scheint insgesamt zu restrikiv zu sein
+    → Das Modell scheint *insgesamt zu restrikiv* zu sein
 :::
 
 ::: notes
@@ -430,13 +437,13 @@ ladungen_table %>%
 ```
 :::
 
-**\|Δ\|** = absoluter Unterschied zwischen ML und WLSMV
+**\|Δ\|** = **absoluter Unterschied** zwischen ML und WLSMV
 
-Aber die Ladungen basieren auf unterschiedichen Schätzungen
+Aber die Ladungen *basieren auf unterschiedichen Schätzungen*
 
-→ nicht direkt miteinander vergleichbar
+→ **nicht direkt miteinander vergleichbar**
 
-Die Differenzspalte zeigt uns:
+[Die Differenzspalte **\|Δ\|** zeigt uns:]{.underline}
 
 welche Items *instabil* über Schätzer hinweg sind ***nicht*** wie groß der „wahre" Unterschied ist
 
@@ -446,21 +453,22 @@ welche Items *instabil* über Schätzer hinweg sind ***nicht*** wie groß der �
 und wie ist das jetzt zu interpretieren, wenn die Ladungen auf unterschiedlichen Schätzungen basieren und deswegen nicht direkt miteinander Vergleichbar sind?
 :::
 
-Was wir nicht sagen Können:
+Was wir *nicht* sagen Können:
 
 > „WLSMV schätzt die Ladung um .08 höher als ML."
 
-Was wir schon sagen können:
+Was wir *schon* sagen können:
 
 > „Items mit großen Differenzen reagieren stärker auf die Wahl des Schätzers."
 
+\
 Konkret bedeutet das:
 
--   Kleine Differenz (\< .05) → Item verhält sich robust:
+-   `Kleine Differenz (< .05)` → Item verhält sich **robust**:
 
     egal ob ML oder WLSMV, die Ladung ist ähnlich stabil
 
--   Große Differenz (\> .10) → Das Item ist empfindlich gegenüber der Schätzerannahme. Das passiert typischerweise bei Items mit starker Schiefe oder wenig Kategorienstreuung
+-   `Große Differenz (> .10)` → Das Item ist **empfindlich gegenüber der Schätzerannahme**. Das passiert typischerweise bei Items mit *starker Schiefe oder wenig Kategorienstreuung*
 
     ::: notes
     -   ::: notes
@@ -474,27 +482,25 @@ Konkret bedeutet das:
         :::
     :::
 
-## Aufällige Items und was wir damit machen
+## [Aufällige Items und was wir damit machen]{.underline}
 
 Die meisten Differenzen sind klein bis mittel.
 
 Fünf Items zeigen größere Differenzen:
 
--   **A5: \|Δ\| = .107**
+-   **A5: \|Δ\|= .107**
+-   C5_rev:\|Δ\|= .096
+-   O1: \|Δ\|= .091
+-   **N4: \|Δ\|= .133**
+-   O3: \|Δ\|= .099
 
--   C5_rev: \|Δ\| = .096
+::: incremental
+-   → **Verteilung** prüfen
 
--   O1: \|Δ\| = .091
+-   → je Faktor die **Polychorische** vs. **Pearson‑Korrelationen** vergleichen
 
--   **N4: \|Δ\| = .133**
-
--   O3: \|Δ\| = .099
-
-→ Verteilung prüfen
-
-→ je Faktor die **Polychorische** vs. **Pearson‑Korrelationen** vergleichen
-
-→ Modellvarianten testen (z. B. Item entfernen oder korrelierte Residuen modellieren)
+-   → **Modellvarianten** testen (z. B. Item entfernen oder korrelierte Residuen modellieren)
+:::
 
 ::: notes
 Ver*teilung Prüfen: Waru*m?
@@ -510,11 +516,7 @@ zeigt, ob die zugrunde liegenden Zusammenhänge durch Ordinalität unterschätzt
 Warum: prüft, ob Fit und Ladungen stabiler werden und ob Item das Modell stört.
 :::
 
-## Verteilung prüfen
-
-für **A5** = "I make people feel at ease."
-
-und **N4** = "I get nervous easily."
+## [Verteilung prüfen]{.underline}
 
 ```{r}
 problem_items <- c("N4","A5")  # passe an nach Bedarf
@@ -523,7 +525,14 @@ plot_df <- bfi_items %>%
   select(all_of(problem_items)) %>%
   pivot_longer(cols = everything(), names_to = "Item", values_to = "Score") %>%
   filter(!is.na(Score)) %>%
-  mutate(Score = factor(Score, levels = sort(unique(Score)))) %>%
+  mutate(
+    Item = recode(
+      Item,
+      "A5" = "A5\n'I make people feel at ease'",
+      "N4" = "N4\n'I get nervous easily'"
+    ),
+    Score = factor(Score, levels = sort(unique(Score)))
+  ) %>%
   group_by(Item, Score) %>%
   summarise(Count = n(), .groups = "drop") %>%
   group_by(Item) %>%
@@ -532,12 +541,18 @@ plot_df <- bfi_items %>%
 
 ggplot(plot_df, aes(x = Score, y = Prop, fill = Score)) +
   geom_col(width = 0.75) +
-  facet_wrap(~ Item, ncol = 3) +
+  facet_wrap(~ Item, ncol = 2) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(x = "Kategorie", y = "Anteil", title = "Kategorieverteilung: problematische Items") +
+  labs(
+    x = "Kategorie",
+    y = "Anteil",
+    title = "Kategorieverteilung: problematische Items"
+  ) +
   theme_minimal() +
-  theme(legend.position = "none")
-
+  theme(
+    legend.position = "none",
+    panel.spacing = unit(1.5, "cm")
+  )
 ```
 
 ::: notes
@@ -552,9 +567,7 @@ N4 zeigt eine relativ ausgeglichene Verteilung über Kategorien; keine starke Ko
 deswegen schauen wir uns jetzt mnochmal die die Pearson- vs. polychorische Korrelationsmatrix an
 :::
 
-## Polychorische vs. Pearson Korrelation
-
-HIER NOCHMAL EINE KURZE ERKLÄRUNG VON CLARA
+## [Polychorische vs. Pearson Korrelation]{.underline}
 
 ```{r}
 library(psych)
@@ -565,21 +578,64 @@ poly; pear
 
 ```
 
-## Einfluss auf Modell-Fit prüfen
+## [Einfluss auf Modell-Fit prüfen]{.underline}
+
+|     |
+|-----|
+|     |
 
 ```{r}
+#| echo: false
 # Beispiel: N4 raus
+
 bfi_model_dropN4 <- gsub(" \\+ N4", "", bfi_model)  # einfache Entfernung; kontrollieren
 fit_WLSMV_drop <- cfa(model = bfi_model_dropN4, data = bfi_items, estimator="WLSMV", ordered=names(bfi_items))
 fit_ML_drop <- cfa(model = bfi_model_dropN4, data = bfi_items, estimator="ML", missing="fiml")
-fitMeasures(fit_WLSMV_drop, c("cfi","tli","rmsea","srmr"))
-fitMeasures(fit_ML_drop, c("cfi","tli","rmsea","srmr"))
+# fitMeasures(fit_WLSMV_drop, c("cfi","tli","rmsea","srmr"))
+# fitMeasures(fit_ML_drop, c("cfi","tli","rmsea","srmr"))
 
 ```
 
--   Modell ohne N4 (WLSMV, skaliert):
+| Modell | CFI                | TLI                | RMSEA             | SRMR              |
+|---------------|---------------|---------------|---------------|---------------|
+| WLSMV  | `.824` .**926** ↑↑ | `.801` .**916** ↑↑ | `.095` .**088 ↓** | `.083` .**078 ↓** |
+| ML     | `.776` .**794** ↑  | `.747` **.766 ↑**  | `.077` **.704 ↓** | `.072` **.067 ↓** |
 
-    CFI = .926, TLI = .916, RMSEA = .088, SRMR = .078.
+: [**Interpretation:**]{.underline}
+
+-   wenn N4 entfernt wird **steigen** alle Indizes **in die gewünschte Richtung**
+
+-   Besonders aufällig ist die **Verbesserung bei WLSMV**
+
+-   **ABER!** → das bedeutet nicht zwangsläufig, dass das Item aus dem Fragebogen entfernt werden sollte. Testentwickler müssen neben statistischen Kennwerten auch **theoretische Überlegungung, Inhaltsvalidität und die Vergleichbarkeit mit bestehenden Normen berücksichtigen**
+
+-   diese Ergebnisse sprechen dafür, dass **WLSMV als Schätzer für ordinal-skalierte Items günstiger ist**
+
+::: notes
+/Aber: der Fragebogen soll ja nicht nur statistisch gut aussehen, sondern das Konstrukt möglichst gut abbilden
+
+Im Falle von BFI: der wurde mit PK-Forschung und Konstruktvalidierung entwickelt
+:::
+
+## [Faktorinterkorrelation vergleichen]{.underline}
+
+```{r}
+cor_ML <- inspect(fit_ML, "cor.lv")
+cor_WLSMV <- inspect(fit_WLSMV, "cor.lv")
+
+round(cor_ML, 2)
+round(cor_WLSMV, 2)
+
+
+```
+
+Die Beziehungen zwischenn den Faktoren werden unter WLSMV teilweise (leicht) stärker geschätzt als unter ML
+
+-   Die **Faktorladungen** **reagieren** teilweise **deutlich** auf die Schätzerwahl.
+
+-   Die **Beziehungen** zwischen den *Big-Five-Faktoren* bleiben dagegen ziemlich **stabil**.
+
+Die Wahl des Schätzers beeinflusst die Stärke der Schätzungen, aber nicht die grundlegende Struktur des Modells
 
 ## [Take-Home-Message]{.underline}
 
@@ -593,6 +649,4 @@ fitMeasures(fit_ML_drop, c("cfi","tli","rmsea","srmr"))
 
 5.  WLSMV korrigiert dafür, indem es die latente kontinuierliche Variable hinter den Kategorien schätzt.
 
-6.  MLR als „Kompromiss-Schätzer", der Normalverteilungsverletzungen korrigiert (löst aber das Ordinalproblem nicht)
-
-7.  Die Schätzerwahl beeinflusst eure Ergebnisse. Deshalb: immer berichten, welchen Schätzer ihr verwendet habt und warum
+6.  Die Schätzerwahl beeinflusst eure Ergebnisse. Deshalb: immer berichten, welchen Schätzer ihr verwendet habt und warum
